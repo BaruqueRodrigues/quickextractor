@@ -1,0 +1,26 @@
+:root{
+
+}
+
+footer {
+  height: 50px;
+  background-color: var(--id_visual);
+  position: absolute;
+  bottom: 0px;
+  width: 100%;
+  padding:13px, 30px ;
+  color: black;
+}
+
+footer p {
+  color: black;
+}
+
+footer a:hover {
+  color: yellow;
+  text-decoration: none;
+}
+.navbar.navbar-default {
+    background-color: var(--id_visual) !important;
+    color: yellow;
+}
