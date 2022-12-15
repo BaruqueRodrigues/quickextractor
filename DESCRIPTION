@@ -12,9 +12,13 @@ Imports:
     bslib,
     config (>= 0.3.1),
     DataEditR,
+    DBI,
     dplyr,
+    duckdb,
     golem (>= 0.3.5),
     magrittr,
+    parallel,
+    RSQLite,
     shiny (>= 1.7.3),
     shinyjs,
     vroom
