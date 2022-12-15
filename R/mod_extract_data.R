@@ -13,6 +13,11 @@ mod_extract_data_ui <- function(id){
   options(shiny.maxRequestSize=120*1024^3)
   options(scipen = 999)
   tagList(
+    #Modal de carregamento dos dados
+
+    fluidRow("Clique no botão abaixo para personalizar o carregamento dos dados"),
+    fluidRow(
+      actionButton(ns("modal_carregamento"), "Opções de carregamento",)),
 
     #File input
  shiny::fluidRow(shinyjs::useShinyjs(),
@@ -51,11 +56,30 @@ mod_extract_data_server <- function(id){
     ns <- session$ns
 
     #Limite de dados no Shiny
-    options(shiny.maxRequestSize=120*1024^3)
+      options(shiny.maxRequestSize=32*1024^3)
 
     #Remover notação cientitifica
     options(scipen = 999)
 
+    observeEvent(input$modal_carregamento,
+                 {showModal(modalDialog(
+                   textInput(ns("delim"),
+                             label = "Selecione o Separador. Deixe em branco para ser detectado automaticamente",
+                             ";"),
+                   numericInput(ns("skip"), "Linhas para serem puladas quando o arquivo for carregado", 0, min = 0),
+                   numericInput(ns("n_max"), "Linhas para serem lidas quando o arquivo for carregado", 0, min = 0),
+
+                   footer = tagList(
+                     modalButton("Cancel")
+                   )
+                 ))
+
+
+                 }
+                 )
+    # observeEvent(input$ok, {
+    #   removeModal()
+    # })
     # Criando reactive values que vão disparar a reatividade no dataset
     values <- reactiveValues(data = NULL, data_active = NULL,
                              rows = NULL, columns = NULL)
@@ -67,9 +91,13 @@ mod_extract_data_server <- function(id){
 
     dados <- reactive({
       req(input$file)
-      #delim <- if (input$delim == "") NULL else input$delim
-      vroom::vroom(input$file$datapath, #delim = delim, skip = input$skip,
-                   locale =  vroom::locale(encoding = "WINDOWS-1252")
+      delim <- if (input$delim == "") NULL else input$delim
+      n_max <- if (input$n_max == 0)  Inf else input$n_max
+      vroom::vroom(input$file$datapath, delim = delim, skip = input$skip,
+                   n_max = n_max, .name_repair = "unique",
+                   num_threads = parallel::detectCores()#,
+                   #locale =  vroom::locale(encoding = "WINDOWS-1252"),delim = ";"
+
       )
     })
 
