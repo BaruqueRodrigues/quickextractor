@@ -17,34 +17,37 @@ mod_extract_data_ui <- function(id){
 
     fluidRow("Clique no botão abaixo para personalizar o carregamento dos dados"),
     fluidRow(
-      actionButton(ns("modal_carregamento"), "Opções de carregamento",)),
+      actionButton(ns("modal_carregamento"), "Opções de carregamento"#,
+                  #style="color: #fff; background-color: #337ab7; border-color: #d12c0f"
+                   )
+      ),
 
     #File input
- shiny::fluidRow(shinyjs::useShinyjs(),
+    shiny::fluidRow(shinyjs::useShinyjs(),
 
-   fileInput(ns("file"),
-             "Indique o Repositorio do Dataset",
-             buttonLabel = "Carregar diretorio",
-             placeholder = "Nenhum Arquivo Selecionado")
-   #DataEditR::dataInputUI(ns("input1")),
-                ), #fim fluidrow
+                    fileInput(ns("file"),
+                              "Indique o Repositorio do Dataset",
+                              buttonLabel = "Carregar diretorio",
+                              placeholder = "Nenhum Arquivo Selecionado")
+                    #DataEditR::dataInputUI(ns("input1")),
+    ), #fim fluidrow
 
- #
- #Fluidrow botões
- fluidRow(
+    #
+    #Fluidrow botões
+    fluidRow(
 
-   DataEditR::dataSelectUI(ns("select1")),
-   DataEditR::dataFilterUI(ns("filter1")),
-   #DataEditR::dataOutputUI(ns("output1")),
-   downloadButton(ns("download"),
-                  label = "Baixar Dataset")
- ),
+      DataEditR::dataSelectUI(ns("select1")),
+      DataEditR::dataFilterUI(ns("filter1")),
+      #DataEditR::dataOutputUI(ns("output1")),
+      downloadButton(ns("download"),
+                     label = "Baixar Dataset")
+    ),
 
-  fluidRow(verbatimTextOutput(outputId = ns("render_glimpse"))),#fim fluidrow
+    fluidRow(verbatimTextOutput(outputId = ns("render_glimpse"))),#fim fluidrow
 
- #Downlooad button
- #fluidRow(downloadButton(ns("downloadData"), "Baixar Dados"))
- )#Fim taglist
+    #Downlooad button
+    #fluidRow(downloadButton(ns("downloadData"), "Baixar Dados"))
+  )#Fim taglist
 
 }
 
@@ -56,7 +59,7 @@ mod_extract_data_server <- function(id){
     ns <- session$ns
 
     #Limite de dados no Shiny
-      options(shiny.maxRequestSize=32*1024^3)
+    options(shiny.maxRequestSize=32*1024^3)
 
     #Remover notação cientitifica
     options(scipen = 999)
@@ -65,18 +68,21 @@ mod_extract_data_server <- function(id){
                  {showModal(modalDialog(
                    textInput(ns("delim"),
                              label = "Selecione o Separador. Deixe em branco para ser detectado automaticamente",
-                             ";"),
+                             ""),
                    numericInput(ns("skip"), "Linhas para serem puladas quando o arquivo for carregado", 0, min = 0),
                    numericInput(ns("n_max"), "Linhas para serem lidas quando o arquivo for carregado", 0, min = 0),
+                   radioButtons(ns("colnames"), "Você deseja ler os arquivos com nomes de colunas?",
+                                choices =  c("TRUE", "FALSE"),
+                                selected = "TRUE"),
 
                    footer = tagList(
-                     modalButton("Cancel")
+                     modalButton("Fechar")
                    )
                  ))
 
 
                  }
-                 )
+    )
     # observeEvent(input$ok, {
     #   removeModal()
     # })
@@ -95,6 +101,7 @@ mod_extract_data_server <- function(id){
       n_max <- if (input$n_max == 0)  Inf else input$n_max
       vroom::vroom(input$file$datapath, delim = delim, skip = input$skip,
                    n_max = n_max, .name_repair = "unique",
+                   col_names = input$colnames,
                    num_threads = parallel::detectCores()#,
                    #locale =  vroom::locale(encoding = "WINDOWS-1252"),delim = ";"
 
@@ -110,11 +117,11 @@ mod_extract_data_server <- function(id){
 
     # Filtrar e Selecionar
     data_select <- DataEditR::dataSelectServer("select1",
-                                # Passando os dados do elemento reativo
-                                data = reactive(values$data))
+                                               # Passando os dados do elemento reativo
+                                               data = reactive(values$data))
     data_filter <- DataEditR::dataFilterServer("filter1",
-                                # Passando os dados do elemento reativo
-                                data = reactive(values$data))
+                                               # Passando os dados do elemento reativo
+                                               data = reactive(values$data))
 
     #Inserindo elementos filtrados e selecionados
 
@@ -150,7 +157,7 @@ mod_extract_data_server <- function(id){
 
     output$render_glimpse <- renderPrint({
       dplyr::glimpse(values$data_active
-        #dados
+                     #dados
       )
     })
     # Exportar
@@ -160,10 +167,12 @@ mod_extract_data_server <- function(id){
     # )
     output$download <- downloadHandler(
       filename = function() {
-        paste0(tools::file_path_sans_ext(input$file$name), ".tsv")
+        paste0(tools::file_path_sans_ext(input$file$name), ".csv")
       },
       content = function(file) {
-        vroom::vroom_write(values$data_active, file,delim = ","
+        vroom::vroom_write(values$data_active, file,delim = ",",
+                           num_threads = parallel::detectCores()
+
         )
       }
     )
